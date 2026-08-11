@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "description": "Derived graph edge that never becomes canonical authority.",
+  "properties": {
+    "asserted": {
+      "title": "Asserted",
+      "type": "boolean"
+    },
+    "predicate": {
+      "title": "Predicate",
+      "type": "string"
+    },
+    "provenance": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Provenance",
+      "type": "array"
+    },
+    "source": {
+      "title": "Source",
+      "type": "string"
+    },
+    "target": {
+      "title": "Target",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source",
+    "predicate",
+    "target",
+    "asserted",
+    "provenance"
+  ],
+  "title": "GraphProjectionEdge",
+  "type": "object"
+}

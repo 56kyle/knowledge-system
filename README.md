@@ -1,95 +1,46 @@
-# knowledge-system
+# Knowledge System
 
-knowledge_system
+Knowledge System is a local foundation for human-owned, agent-assisted Markdown collections. Markdown is the durable authority. The package inspects and validates collections, resolves stable references, evaluates FLAP and research profiles, computes trust-domain propagation, and applies reviewed changes through compare-and-swap mutation plans.
 
----
+The package does not provide a database, embedding index, RAG service, MCP server, Obsidian plugin, or credential store. Projection records are contracts for later derived systems; they are not a second authority.
 
-**[📚 View Documentation](https://knowledge-system.readthedocs.io/)** | **[🐛 Report a Bug](https://github.com/56kyle/knowledge-system/issues)** | **[✨ Request a Feature](https://github.com/56kyle/knowledge-system/issues)**
+## Install
 
----
+The repository uses `uv`:
 
-## Installation
-
-You can install `knowledge_system` via [pip](pip-documentation) from PyPI:
-
-```bash
-pip install knowledge_system
+```console
+uv sync --all-groups
+uv run kn --help
 ```
 
-### Installation for Development
+Runtime dependencies are Pydantic, ruamel.yaml, Typer, Loguru, Platformdirs, and typing-extensions.
 
-To set up `knowledge_system` for local development:
+## Collection basics
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/56kyle/knowledge-system.git
-    cd knowledge-system
-    ```
-2.  Install dependencies using [:term:`uv`](uv-documentation):
-    ```bash
-    uv sync
-    ```
-3.  Install pre-commit hooks:
-    ```bash
-    uvx nox -s pre-commit -- install
-    ```
+A managed collection can contain `collection.yaml`, `profiles.lock.yaml`, and `retired-ids.yaml`. A directory without a manifest is still inspectable as generic Markdown, but its notes do not gain durable collection identity or profile semantics.
 
-This sets up a virtual environment and installs core, development, and quality check dependencies.
+Registered notes use readable, collection-scoped identities:
 
-## Usage
-
-(This section should explain how to use the generated application. Replace the content below with instructions specific to your project's functionality. If your project is a library, show import examples. If it's a CLI application, show command examples. Link to the full documentation for details.)
-
-### As a Library
-
-```python
-# Example usage of your package as a library
-# from knowledge_system import some_function
-# result = some_function()
-# print(result)
-```
-
-### As a Command-Line Application
-
-If your project defines command-line entry points in `pyproject.toml`:
-
-```bash
-# Example usage of your CLI application
-# knowledge-system --help
-# knowledge-system do-something --input file.txt
-```
-
-For detailed API documentation and CLI command references, see the **[Documentation][documentation]**.
-
-## Development Workflow
-
-This project uses a robust set of tools for development, testing, and quality assurance. All significant automated tasks are run via [:term:`Nox`](nox-documentation), orchestrated by the central `noxfile.py`.
-
-- **Run all checks (lint, typecheck, security):** `uvx nox -s check`
-- **Run test suite with coverage:** `uvx nox -s test`
-- **Build documentation:** `uvx nox -s docs`
-- **Build package:** `uvx nox -s build`
-- **See all available tasks:** `uvx nox -l`
-
-Explore the `noxfile.py` and the project documentation for detailed information on the automated workflow.
-
-## Contributing
-
-(This section should guide contributions _to this specific generated project_, not the template. It should refer to the project's `CODE_OF_CONDUCT.md` and link to a `CONTRIBUTING.md` specific to the project, if you choose to generate one.)
-
-Report bugs or suggest features via the [issue tracker](https://github.com/56kyle/knowledge-system/issues).
-
-See [CONTRIBUTING.md](#) for contribution guidelines.
-
-## License
-
-Distributed under the terms of the **MIT** license. See [LICENSE](LICENSE) for details.
-
+```yaml
 ---
+id: stable-identities-survive-moves
+profiles: [research@1]
+created_by: human:kyle
+origin: human
+review:
+  status: unreviewed
+research_kind: concept
+research_depth: studied
+sources: [source-version:identity-paper/v1]
+---
+```
 
-**This project was generated from the [cookiecutter-robust-python template][cookiecutter-robust-python].**
+Canonical references use `note:<collection>/<id>` and optional block selectors such as `note:architecture/stable-identities-survive-moves#^claim`.
 
-<!-- Reference Links -->
+## Safe local changes
 
-[cookiecutter-robust-python]: https://github.com/robust-python/cookiecutter-robust-python
-[documentation]: https://knowledge-system.readthedocs.io/
+`kn register` and `kn mutation plan` produce an immutable plan before writing. `kn mutation apply` treats serialized plans as hostile: it verifies the plan digest, collection snapshot, authorization inputs, file hashes, identity reservations, semantic results, and an optional Git revision before any write. The CLI authenticates the current OS account as its local-filesystem principal; `actor` and `task` remain independent attribution. A stale precondition exits with code `3` and performs no writes.
+
+<!-- github-only -->
+
+See [usage](docs/usage.md), [reference](docs/reference.md), and [design decisions](docs/decisions/) for the complete local-core contract.

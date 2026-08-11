@@ -26,9 +26,14 @@ classifiers = [
 dependencies = [
     "loguru>=0.7.3",
     "platformdirs>=4.3.8",
+    "pydantic>=2.13.4,<3",
+    "ruamel.yaml>=0.19.1,<0.20",
     "typer>=0.15.4",
     "typing-extensions>=4.13.2"
 ]
+
+[project.scripts]
+kn = "knowledge_system.__main__:app"
 
 [dependency-groups]
 dev = [

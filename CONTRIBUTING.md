@@ -201,7 +201,7 @@ _This project was generated from the [cookiecutter-robust-python][cookiecutter-r
 
 <!-- Reference Links -->
 
-[code-of-conduct]: CODE_OF_CONDUCT.md
+[code-of-conduct]: https://github.com/56kyle/knowledge-system/blob/main/CODE_OF_CONDUCT.md
 [issues]: https://github.com/56kyle/knowledge-system/issues
 [discussions]: https://github.com/56kyle/knowledge-system/discussions
 [uv-documentation]: https://docs.astral.sh/uv/

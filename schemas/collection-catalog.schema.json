@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "CatalogEntry": {
+      "additionalProperties": false,
+      "description": "Deployment locator for one collection identity.",
+      "properties": {
+        "collection_id": {
+          "title": "Collection Id",
+          "type": "string"
+        },
+        "manifest": {
+          "title": "Manifest",
+          "type": "string"
+        },
+        "repo_root": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repo Root"
+        },
+        "trust_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Trust Domains",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "collection_id",
+        "manifest",
+        "trust_domains"
+      ],
+      "title": "CatalogEntry",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Owner-maintained collection locator catalog.",
+  "properties": {
+    "collections": {
+      "items": {
+        "$ref": "#/$defs/CatalogEntry"
+      },
+      "title": "Collections",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "collections"
+  ],
+  "title": "CollectionCatalog",
+  "type": "object"
+}

@@ -1,0 +1,395 @@
+{
+  "$defs": {
+    "CatalogEntry": {
+      "additionalProperties": false,
+      "description": "Deployment locator for one collection identity.",
+      "properties": {
+        "collection_id": {
+          "title": "Collection Id",
+          "type": "string"
+        },
+        "manifest": {
+          "title": "Manifest",
+          "type": "string"
+        },
+        "repo_root": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repo Root"
+        },
+        "trust_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Trust Domains",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "collection_id",
+        "manifest",
+        "trust_domains"
+      ],
+      "title": "CatalogEntry",
+      "type": "object"
+    },
+    "CrossDomainRule": {
+      "additionalProperties": false,
+      "description": "Explicitly allowed relation across trust domains.",
+      "properties": {
+        "destination_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Destination Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "predicates": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Predicates",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "source_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Domains",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "source_domains",
+        "destination_domains",
+        "predicates"
+      ],
+      "title": "CrossDomainRule",
+      "type": "object"
+    },
+    "MutationIntent": {
+      "description": "Supported local mutation operations.",
+      "enum": [
+        "register",
+        "create",
+        "set_field",
+        "remove_field",
+        "replace_subtree",
+        "move",
+        "reserve_collection",
+        "retire_identity"
+      ],
+      "title": "MutationIntent",
+      "type": "string"
+    },
+    "Origin": {
+      "description": "How durable note material entered the collection.",
+      "enum": [
+        "human",
+        "agent",
+        "mixed",
+        "imported"
+      ],
+      "title": "Origin",
+      "type": "string"
+    },
+    "RegisterMutationPayload": {
+      "additionalProperties": false,
+      "description": "Explicit registration fields for the generic mutation boundary.",
+      "properties": {
+        "origin": {
+          "$ref": "#/$defs/Origin"
+        },
+        "profiles": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Profiles",
+          "type": "array"
+        }
+      },
+      "required": [
+        "origin"
+      ],
+      "title": "RegisterMutationPayload",
+      "type": "object"
+    },
+    "RetirementPayload": {
+      "additionalProperties": false,
+      "description": "Required durable disposition for retiring one active identity.",
+      "properties": {
+        "disposition": {
+          "minLength": 1,
+          "title": "Disposition",
+          "type": "string"
+        },
+        "retired_on": {
+          "format": "date",
+          "title": "Retired On",
+          "type": "string"
+        },
+        "successor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Successor"
+        }
+      },
+      "required": [
+        "disposition",
+        "retired_on"
+      ],
+      "title": "RetirementPayload",
+      "type": "object"
+    },
+    "TrustGrant": {
+      "additionalProperties": false,
+      "description": "Time-bounded operation authorization for an authenticated principal.",
+      "properties": {
+        "actions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Actions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "collections": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Collections",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "principal": {
+          "title": "Principal",
+          "type": "string"
+        },
+        "task": {
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "principal",
+        "task",
+        "actions",
+        "domains",
+        "expires_at"
+      ],
+      "title": "TrustGrant",
+      "type": "object"
+    },
+    "TrustPolicy": {
+      "additionalProperties": false,
+      "description": "Owner-controlled trust-domain relation policy.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "rules": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CrossDomainRule"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "TrustPolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Validated request for a supported semantic mutation.",
+  "properties": {
+    "actor": {
+      "title": "Actor",
+      "type": "string"
+    },
+    "collection": {
+      "title": "Collection",
+      "type": "string"
+    },
+    "destination": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Destination"
+    },
+    "expected_git_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Git Revision"
+    },
+    "expected_policy_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Policy Id"
+    },
+    "expected_policy_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Policy Sha256"
+    },
+    "field": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Field"
+    },
+    "intent": {
+      "$ref": "#/$defs/MutationIntent"
+    },
+    "path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Path"
+    },
+    "task": {
+      "title": "Task",
+      "type": "string"
+    },
+    "trust_grant": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TrustGrant"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "trust_policy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TrustPolicy"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "value": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RegisterMutationPayload"
+        },
+        {
+          "$ref": "#/$defs/RetirementPayload"
+        },
+        {
+          "$ref": "#/$defs/CatalogEntry"
+        },
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Value"
+    }
+  },
+  "required": [
+    "intent",
+    "collection",
+    "actor",
+    "task"
+  ],
+  "title": "MutationRequest",
+  "type": "object"
+}

@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "RetirementRecord": {
+      "additionalProperties": false,
+      "description": "Append-only disposition for one identity that can never be reused.",
+      "properties": {
+        "disposition": {
+          "minLength": 1,
+          "title": "Disposition",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "retired_on": {
+          "format": "date",
+          "title": "Retired On",
+          "type": "string"
+        },
+        "successor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Successor"
+        }
+      },
+      "required": [
+        "id",
+        "disposition",
+        "retired_on"
+      ],
+      "title": "RetirementRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Append-only record of identities that cannot be reused.",
+  "properties": {
+    "records": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RetirementRecord"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "title": "RetiredIdentityFile",
+  "type": "object"
+}

@@ -1,5 +1,3 @@
 # Changelog
 
-```{include} ../CHANGELOG.md
-
-```
+This project does not have a published release yet.

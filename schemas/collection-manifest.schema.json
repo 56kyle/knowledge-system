@@ -1,0 +1,347 @@
+{
+  "$defs": {
+    "AgentPolicy": {
+      "additionalProperties": false,
+      "description": "Declared local mutation policy.",
+      "properties": {
+        "concurrency": {
+          "const": "compare-and-swap",
+          "default": "compare-and-swap",
+          "title": "Concurrency",
+          "type": "string"
+        },
+        "direct": {
+          "default": [
+            "register",
+            "create",
+            "set_field",
+            "remove_field",
+            "replace_subtree",
+            "move",
+            "reserve_collection",
+            "retire_identity"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Direct",
+          "type": "array"
+        },
+        "explicit_authorization": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Explicit Authorization",
+          "type": "array"
+        },
+        "inbox_limits": {
+          "$ref": "#/$defs/InboxLimits"
+        },
+        "review_required": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Review Required",
+          "type": "array"
+        }
+      },
+      "title": "AgentPolicy",
+      "type": "object"
+    },
+    "CollectionIdentity": {
+      "additionalProperties": false,
+      "description": "Stable identity and trust placement of a collection.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "mode": {
+          "default": "canonical",
+          "enum": [
+            "canonical",
+            "inbox",
+            "derived"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "trust_domain": {
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "title": "Trust Domain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "trust_domain"
+      ],
+      "title": "CollectionIdentity",
+      "type": "object"
+    },
+    "InboxLimits": {
+      "additionalProperties": false,
+      "description": "Bounds for agent-created inbox material.",
+      "properties": {
+        "bytes": {
+          "default": 10000000,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "files": {
+          "default": 500,
+          "minimum": 0,
+          "title": "Files",
+          "type": "integer"
+        }
+      },
+      "title": "InboxLimits",
+      "type": "object"
+    },
+    "NoteDiscovery": {
+      "additionalProperties": false,
+      "description": "Collection note discovery rules.",
+      "properties": {
+        "adapter": {
+          "default": "portable",
+          "enum": [
+            "portable",
+            "obsidian"
+          ],
+          "title": "Adapter",
+          "type": "string"
+        },
+        "exclude": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Exclude",
+          "type": "array"
+        },
+        "include": {
+          "default": [
+            "*.md",
+            "**/*.md"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Include",
+          "type": "array"
+        },
+        "roots": {
+          "default": [
+            "."
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Roots",
+          "type": "array"
+        }
+      },
+      "title": "NoteDiscovery",
+      "type": "object"
+    },
+    "OptionalReferences": {
+      "additionalProperties": false,
+      "description": "References to owner-controlled policy and derived recipes.",
+      "properties": {
+        "asset_registry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Asset Registry"
+        },
+        "capture_registry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capture Registry"
+        },
+        "catalog": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Catalog"
+        },
+        "projection_recipe": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Projection Recipe"
+        },
+        "source_registry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Registry"
+        },
+        "source_version_registry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Version Registry"
+        },
+        "trust_policy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trust Policy"
+        },
+        "trust_policy_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trust Policy Id"
+        }
+      },
+      "title": "OptionalReferences",
+      "type": "object"
+    },
+    "ProfileSelection": {
+      "additionalProperties": false,
+      "description": "Enabled profile versions and collection-specific settings.",
+      "properties": {
+        "enabled": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Enabled",
+          "type": "object"
+        },
+        "settings": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Settings",
+          "type": "object"
+        }
+      },
+      "title": "ProfileSelection",
+      "type": "object"
+    },
+    "RelationPolicy": {
+      "additionalProperties": false,
+      "description": "Relation vocabulary and default resolution behavior.",
+      "properties": {
+        "default_resolution": {
+          "default": "required",
+          "enum": [
+            "required",
+            "prospective"
+          ],
+          "title": "Default Resolution",
+          "type": "string"
+        },
+        "prospective_predicates": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Prospective Predicates",
+          "type": "array"
+        },
+        "vocabulary": {
+          "default": "core@1",
+          "title": "Vocabulary",
+          "type": "string"
+        }
+      },
+      "title": "RelationPolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Versioned collection contract loaded from collection.yaml.",
+  "properties": {
+    "agents": {
+      "$ref": "#/$defs/AgentPolicy"
+    },
+    "collection": {
+      "$ref": "#/$defs/CollectionIdentity"
+    },
+    "notes": {
+      "$ref": "#/$defs/NoteDiscovery"
+    },
+    "profiles": {
+      "$ref": "#/$defs/ProfileSelection"
+    },
+    "references": {
+      "$ref": "#/$defs/OptionalReferences"
+    },
+    "relations": {
+      "$ref": "#/$defs/RelationPolicy"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "collection"
+  ],
+  "title": "CollectionManifest",
+  "type": "object"
+}

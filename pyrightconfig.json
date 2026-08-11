@@ -1,0 +1,37 @@
+{
+  "include": ["src", "tests"],
+  "exclude": [
+    ".venv",
+    "venv",
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".nox",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".coverage",
+    "rust"
+  ],
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": []
+    }
+  ],
+  "defineConstant": {
+    "DEBUG": true
+  },
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": true,
+
+  "reportGeneralTypeIssues": "warning",
+  "reportPropertyTypeMismatch": "warning",
+  "reportMissingParameterType": "warning",
+  "reportOptionalOperand": "warning",
+  "pythonVersion": "3.10",
+
+  "reportAny": "error",
+  "reportExplicitAny": "warning"
+}

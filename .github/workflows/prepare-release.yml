@@ -43,7 +43,7 @@ jobs:
         run: uvx nox -s get-release-notes -- ${{ github.workspace }}-CHANGELOG.md
 
       - name: Create Release Draft
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: ${{ github.workspace }}-CHANGELOG.md
           draft: true

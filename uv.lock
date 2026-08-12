@@ -652,7 +652,7 @@ wheels = [
 
 [[package]]
 name = "knowledge-system"
-version = "0.0.0"
+version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "loguru" },

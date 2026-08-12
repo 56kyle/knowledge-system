@@ -70,7 +70,18 @@ def test__slug(value: str, expected: str) -> None:
     assert _slug(value) == expected
 
 
-@pytest.mark.parametrize("value", ["../outside.md", "/absolute.md", "C:/absolute.md", "nested//note.md"])
+@pytest.mark.parametrize(
+    "value",
+    [
+        "../outside.md",
+        "/absolute.md",
+        "C:/absolute.md",
+        "C:drive-relative.md",
+        "nested/C:/absolute.md",
+        "nested/C:drive-relative.md",
+        "nested//note.md",
+    ],
+)
 def test__collection_path_rejects_nonrelative_or_unnormalized_path(tmp_path: Path, value: str) -> None:
     with pytest.raises(MutationPlanningError):
         _collection_path(tmp_path, value, must_exist=False)

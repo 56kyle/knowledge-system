@@ -154,7 +154,17 @@ def test__retained_target_path_rejects_replaced_parent_for_every_apply_phase(tmp
         _retained_target_path(tmp_path, relative, retained)
 
 
-@pytest.mark.parametrize("hostile_path", ["../outside.md", "/absolute.md", "C:/absolute.md"])
+@pytest.mark.parametrize(
+    "hostile_path",
+    [
+        "../outside.md",
+        "/absolute.md",
+        "C:/absolute.md",
+        "C:drive-relative.md",
+        "nested/C:/absolute.md",
+        "nested/C:drive-relative.md",
+    ],
+)
 def test_apply_mutation_rejects_resigned_hostile_target_path(tmp_path: Path, hostile_path: str) -> None:
     plan = _create_plan(tmp_path)
     file = plan.files[0].model_copy(update={"path": hostile_path})

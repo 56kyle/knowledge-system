@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import platform
 import re
 import shutil
 import socket
+import stat
 import subprocess
 import tempfile
 import time
@@ -15,6 +17,8 @@ import uuid
 from base64 import b64decode
 from base64 import b64encode
 from contextlib import contextmanager
+from contextlib import suppress
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timezone
 from difflib import unified_diff
@@ -78,6 +82,56 @@ _ID = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _GENERIC_MUTABLE_FIELDS = frozenset({"tags", "aliases"})
 _ZERO_DIGEST = "0" * 64
 _LOCK_STALE_SECONDS = 300
+_WINDOWS_DRIVE_PREFIX = re.compile(r"^[A-Za-z]:")
+_LOCK_NONCE = re.compile(r"^[0-9a-f]{32}$")
+_MAX_LOCK_PID = (1 << 31) - 1
+
+
+@dataclass(frozen=True, slots=True)
+class _CollectionLockRecord:
+    """Validated immutable value stored in a collection lock file."""
+
+    pid: int
+    host: str | None
+    created: float
+    nonce: str
+
+    def __post_init__(self) -> None:
+        """Reject values outside the canonical collection-lock wire shape."""
+        if type(self.pid) is not int or not 0 < self.pid <= _MAX_LOCK_PID:
+            raise ValueError("collection lock PID must be a positive signed 32-bit integer")
+        if self.host is not None and (
+            not self.host or "\x00" in self.host or self.host != self.host.strip() or self.host != self.host.casefold()
+        ):
+            raise ValueError("collection lock host must be a normalized machine identity")
+        if type(self.created) is not float or not math.isfinite(self.created) or self.created < 0:
+            raise ValueError("collection lock creation time must be a finite nonnegative float")
+        nonce = cast("object", self.nonce)
+        if not isinstance(nonce, str) or _LOCK_NONCE.fullmatch(nonce) is None:
+            raise ValueError("collection lock nonce must be 32 lowercase hexadecimal characters")
+
+
+@dataclass(frozen=True, slots=True)
+class _InspectedCollectionLock:
+    """Bind parsed lock ownership to the bytes and file identity inspected."""
+
+    content: bytes
+    device: int
+    inode: int
+    record: _CollectionLockRecord | None
+
+
+def _normalize_collection_lock_created(created: object) -> float:
+    """Normalize a finite JSON numeric timestamp without accepting booleans."""
+    if type(created) not in {int, float}:
+        raise ValueError("collection lock creation time must be numeric")
+    try:
+        normalized = float(cast("int | float", created))
+    except OverflowError as error:
+        raise ValueError("collection lock creation time is not representable") from error
+    if not math.isfinite(normalized) or normalized < 0:
+        raise ValueError("collection lock creation time must be finite and nonnegative")
+    return normalized
 
 
 def _digest(content: bytes) -> str:
@@ -89,13 +143,13 @@ def _relative_path(value: str) -> Path:
     """Parse a portable collection-relative path without traversal syntax."""
     if not value or "\x00" in value:
         raise MutationPlanningError("path must not be empty or contain NUL")
-    if value.startswith(("\\\\", "//", "\\?\\", "\\.\\")):
+    if value.startswith(("/", "\\")):
         raise MutationPlanningError(f"device and UNC paths are not allowed: {value}")
     portable = value.replace("\\", "/")
-    path = Path(portable)
-    if path.is_absolute() or path.drive or any(part in {"", ".", ".."} for part in portable.split("/")):
+    parts = portable.split("/")
+    if any(part in {"", ".", ".."} or _WINDOWS_DRIVE_PREFIX.match(part) for part in parts):
         raise MutationPlanningError(f"path must be normalized and collection-relative: {value}")
-    return path
+    return Path(*parts)
 
 
 def _collection_path(root: Path, value: str, *, must_exist: bool) -> Path:
@@ -952,6 +1006,114 @@ def approve_mutation(plan: MutationPlan, principal: AuthenticatedPrincipal) -> M
     )
 
 
+def _new_collection_lock_record(
+    *,
+    pid: int | None = None,
+    created: int | float | None = None,
+) -> _CollectionLockRecord:
+    """Create a valid current-host lock record, with controllable process facts for tests."""
+    return _CollectionLockRecord(
+        pid=os.getpid() if pid is None else pid,
+        host=_machine_identity(),
+        created=time.time() if created is None else _normalize_collection_lock_created(created),
+        nonce=uuid.uuid4().hex,
+    )
+
+
+def _encode_collection_lock_record(record: _CollectionLockRecord) -> bytes:
+    """Encode a validated collection lock record canonically."""
+    value = {
+        "created": record.created,
+        "host": record.host,
+        "nonce": record.nonce,
+        "pid": record.pid,
+    }
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+
+
+def _decode_collection_lock_record(content: bytes) -> _CollectionLockRecord:
+    """Decode only the exact canonical collection-lock wire shape."""
+    value = cast("object", json.loads(content.decode("utf-8")))
+    if not isinstance(value, dict):
+        raise ValueError("collection lock must contain a JSON object")
+    fields = cast("dict[object, object]", value)
+    if set(fields) != {"created", "host", "nonce", "pid"} or not all(isinstance(key, str) for key in fields):
+        raise ValueError("collection lock fields are invalid")
+    pid = fields["pid"]
+    host = fields["host"]
+    created = fields["created"]
+    nonce = fields["nonce"]
+    if type(pid) is not int:
+        raise ValueError("collection lock PID must be an integer")
+    if host is not None and not isinstance(host, str):
+        raise ValueError("collection lock host must be a string or null")
+    if not isinstance(nonce, str):
+        raise ValueError("collection lock nonce must be a string")
+    return _CollectionLockRecord(
+        pid=pid,
+        host=host,
+        created=_normalize_collection_lock_created(created),
+        nonce=nonce,
+    )
+
+
+def _inspect_collection_lock(lock_path: Path) -> _InspectedCollectionLock:
+    """Read one regular lock file and retain its content and filesystem identity."""
+    try:
+        path_before = lock_path.lstat()
+        with lock_path.open("rb") as stream:
+            before = os.fstat(stream.fileno())
+            content = stream.read()
+            after = os.fstat(stream.fileno())
+        path_after = lock_path.lstat()
+    except OSError as error:
+        raise MutationConflictError("collection lock cannot be safely inspected") from error
+    reparse = getattr(path_after, "st_file_attributes", 0) & 0x400
+    path_identity_before = (path_before.st_dev, path_before.st_ino)
+    path_identity_after = (path_after.st_dev, path_after.st_ino)
+    handle_identity_before = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+    handle_identity_after = (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+    if (
+        not stat.S_ISREG(path_after.st_mode)
+        or reparse
+        or path_identity_before != path_identity_after
+        or path_identity_after != handle_identity_after[:2]
+        or handle_identity_before != handle_identity_after
+    ):
+        raise MutationConflictError("collection lock identity changed during inspection")
+    try:
+        record = _decode_collection_lock_record(content)
+    except (UnicodeDecodeError, ValueError):
+        record = None
+    return _InspectedCollectionLock(
+        content=content,
+        device=after.st_dev,
+        inode=after.st_ino,
+        record=record,
+    )
+
+
+def _unlink_inspected_collection_lock(
+    lock_path: Path,
+    inspected: _InspectedCollectionLock,
+    *,
+    expected_nonce: str | None,
+) -> None:
+    """Unlink a lock only when its inspected identity, bytes, and known nonce remain bound."""
+    current = _inspect_collection_lock(lock_path)
+    unchanged = (current.device, current.inode) == (
+        inspected.device,
+        inspected.inode,
+    ) and current.content == inspected.content
+    nonce_matches = expected_nonce is None or (current.record is not None and current.record.nonce == expected_nonce)
+    if not unchanged or not nonce_matches:
+        raise MutationConflictError("collection lock changed before removal")
+    try:
+        lock_path.unlink(missing_ok=False)
+    except OSError as error:
+        raise MutationConflictError("collection lock could not be safely removed") from error
+
+
 @contextmanager
 def _collection_lock(plan: MutationPlan, context: ApplyContext) -> Generator[None, None, None]:
     """Hold the collection's cross-process lock through preflight and apply."""
@@ -967,13 +1129,8 @@ def _collection_lock(plan: MutationPlan, context: ApplyContext) -> Generator[Non
         raise MutationConflictError("collection lock directory is unsafe")
     state.mkdir(exist_ok=True)
     lock_path = state / "collection.lock"
-    nonce = uuid.uuid4().hex
-    record = {
-        "pid": os.getpid(),
-        "host": _machine_identity(),
-        "created": time.time(),
-        "nonce": nonce,
-    }
+    record = _new_collection_lock_record()
+    content = _encode_collection_lock_record(record)
     try:
         descriptor = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
     except FileExistsError:
@@ -982,34 +1139,30 @@ def _collection_lock(plan: MutationPlan, context: ApplyContext) -> Generator[Non
             descriptor = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
         except FileExistsError as error:
             raise MutationConflictError("collection is locked by another process") from error
+    owned_lock: _InspectedCollectionLock | None = None
     try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-            _ = stream.write(json.dumps(record, sort_keys=True))
+        with os.fdopen(descriptor, "wb") as stream:
+            _ = stream.write(content)
             stream.flush()
             os.fsync(stream.fileno())
+        owned_lock = _inspect_collection_lock(lock_path)
+        if owned_lock.record != record or owned_lock.content != content:
+            raise MutationConflictError("created collection lock cannot be verified")
         yield
     finally:
-        try:
-            current = cast("object", json.loads(lock_path.read_text(encoding="utf-8")))
-            if isinstance(current, dict) and cast("dict[object, object]", current).get("nonce") == nonce:
-                lock_path.unlink()
-        except (OSError, ValueError):
-            pass
+        if owned_lock is not None:
+            with suppress(MutationConflictError):
+                _unlink_inspected_collection_lock(lock_path, owned_lock, expected_nonce=record.nonce)
 
 
 def _recover_collection_lock(lock_path: Path, plan: MutationPlan, context: ApplyContext) -> None:
     """Recover only a provably dead local lock or an owner-approved unknown lock."""
-    recoverable = False
-    try:
-        record = cast("dict[str, object]", json.loads(lock_path.read_text(encoding="utf-8")))
-        machine = _machine_identity()
-        same_host = machine is not None and record.get("host") == machine
-        created = record.get("created")
-        pid = record.get("pid")
-        old = isinstance(created, (int, float)) and time.time() - created >= _LOCK_STALE_SECONDS
-        recoverable = os.name == "posix" and same_host and old and isinstance(pid, int) and not _process_exists(pid)
-    except (OSError, ValueError, TypeError):
-        recoverable = False
+    inspected = _inspect_collection_lock(lock_path)
+    record = inspected.record
+    machine = _machine_identity()
+    same_host = record is not None and machine is not None and record.host == machine
+    old = record is not None and time.time() - record.created >= _LOCK_STALE_SECONDS
+    recoverable = os.name == "posix" and record is not None and same_host and old and not _process_exists(record.pid)
     approval = context.approval
     approved_recovery = (
         context.recover_lock
@@ -1024,7 +1177,11 @@ def _recover_collection_lock(lock_path: Path, plan: MutationPlan, context: Apply
     )
     if not recoverable and not approved_recovery:
         raise MutationConflictError("collection lock ownership cannot be safely recovered")
-    lock_path.unlink(missing_ok=False)
+    _unlink_inspected_collection_lock(
+        lock_path,
+        inspected,
+        expected_nonce=record.nonce if record is not None else None,
+    )
 
 
 def _machine_identity() -> str | None:
@@ -1037,6 +1194,8 @@ def _process_exists(pid: int) -> bool:
     """Return whether the local OS can prove a process remains alive."""
     try:
         os.kill(pid, 0)
+    except OverflowError:
+        return True
     except ProcessLookupError:
         return False
     except (PermissionError, OSError):

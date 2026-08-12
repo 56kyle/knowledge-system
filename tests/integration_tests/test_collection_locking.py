@@ -1,8 +1,6 @@
 # pyright: reportPrivateUsage=false, reportUnusedCallResult=false
 
-import json
 import os
-import platform
 import subprocess
 import sys
 import time
@@ -20,6 +18,10 @@ from knowledge_system.domain import MutationPlan
 from knowledge_system.domain import MutationRequest
 from knowledge_system.exceptions import MutationConflictError
 from knowledge_system.mutation import _collection_lock
+from knowledge_system.mutation import _CollectionLockRecord
+from knowledge_system.mutation import _decode_collection_lock_record
+from knowledge_system.mutation import _encode_collection_lock_record
+from knowledge_system.mutation import _new_collection_lock_record
 from knowledge_system.mutation import apply_mutation
 from knowledge_system.mutation import approve_mutation
 from knowledge_system.mutation import plan_mutation
@@ -56,36 +58,18 @@ def _lock_path(root: Path) -> Path:
     return path
 
 
-def _write_lock(root: Path, *, pid: int, created: float, nonce: str = "nonce") -> Path:
+def _write_lock(root: Path, *, pid: int, created: float) -> Path:
     path = _lock_path(root)
-    path.write_text(
-        json.dumps(
-            {
-                "pid": pid,
-                "host": os.environ.get("COMPUTERNAME", "unknown"),
-                "created": created,
-                "nonce": nonce,
-            }
-        ),
-        encoding="utf-8",
-    )
+    record = _new_collection_lock_record(pid=pid, created=created)
+    path.write_bytes(_encode_collection_lock_record(record))
     return path
 
 
 def apply_with_windows_os_kill_audit_guard(root: Path) -> None:
     plan = _plan(root)
     lock = _lock_path(root)
-    lock.write_text(
-        json.dumps(
-            {
-                "pid": os.getpid(),
-                "host": platform.node().strip().casefold(),
-                "created": 0,
-                "nonce": "audit-guard",
-            }
-        ),
-        encoding="utf-8",
-    )
+    record = _new_collection_lock_record(pid=os.getpid(), created=0)
+    lock.write_bytes(_encode_collection_lock_record(record))
 
     def reject_os_kill(event: str, _arguments: tuple[object, ...]) -> None:
         if event == "os.kill":
@@ -112,9 +96,9 @@ def test_collection_lock_nonce_change_prevents_unowned_cleanup(tmp_path: Path) -
     plan = _plan(tmp_path)
     lock = _lock_path(tmp_path)
     with _collection_lock(plan, _context(plan)):
-        record = cast("dict[str, object]", json.loads(lock.read_text(encoding="utf-8")))
-        record["nonce"] = "different-owner"
-        lock.write_text(json.dumps(record), encoding="utf-8")
+        record = _decode_collection_lock_record(lock.read_bytes())
+        replacement = replace(record, nonce="f" * 32)
+        lock.write_bytes(_encode_collection_lock_record(replacement))
     assert lock.exists()
 
 
@@ -186,10 +170,29 @@ def test_fresh_dead_or_stale_live_lock_does_not_recover(tmp_path: Path, pid: int
     assert not (tmp_path / "new.md").exists()
 
 
-def test_unknown_lock_requires_explicit_approved_recovery(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"not-json",
+        b"[]",
+        (
+            b'{"created":0,"host":"test-machine",'
+            + b'"nonce":"0123456789abcdef0123456789abcdef","pid":1'
+            + (b"0" * 1000)
+            + b"}"
+        ),
+        (
+            b'{"created":1'
+            + (b"0" * 1000)
+            + b',"host":"test-machine",'
+            + b'"nonce":"0123456789abcdef0123456789abcdef","pid":1}'
+        ),
+    ],
+)
+def test_unknown_lock_requires_explicit_approved_recovery(tmp_path: Path, content: bytes) -> None:
     plan = _plan(tmp_path)
     lock = _lock_path(tmp_path)
-    lock.write_text("not-json", encoding="utf-8")
+    lock.write_bytes(content)
     with pytest.raises(MutationConflictError):
         apply_mutation(plan, _context(plan))
     apply_mutation(plan, _context(plan, recover=True, approve=True))
@@ -232,10 +235,13 @@ def test_stale_lock_recovery_rejects_mismatched_approval_before_removal(
 def test_unknown_host_lock_requires_complete_owner_approval(tmp_path: Path) -> None:
     plan = _plan(tmp_path)
     lock = _lock_path(tmp_path)
-    lock.write_text(
-        json.dumps({"pid": 1, "host": "another-host", "created": 0, "nonce": "foreign"}),
-        encoding="utf-8",
+    record = _CollectionLockRecord(
+        pid=1,
+        host="another-host",
+        created=0.0,
+        nonce="f" * 32,
     )
+    lock.write_bytes(_encode_collection_lock_record(record))
     with pytest.raises(MutationConflictError):
         apply_mutation(plan, _context(plan, recover=True))
     apply_mutation(plan, _context(plan, recover=True, approve=True))
@@ -246,9 +252,10 @@ def test_real_second_process_lock_conflicts_then_releases(tmp_path: Path) -> Non
     plan = _plan(tmp_path)
     lock = _lock_path(tmp_path)
     script = (
-        "import json,os,sys,time; from pathlib import Path; "
-        "p=Path(sys.argv[1]); p.write_text(json.dumps({'pid':os.getpid(),'host':os.environ.get('COMPUTERNAME','unknown'),"
-        "'created':time.time(),'nonce':'holder'}),encoding='utf-8'); print('ready',flush=True); "
+        "import sys; from pathlib import Path; "
+        "from knowledge_system.mutation import _encode_collection_lock_record,_new_collection_lock_record; "
+        "p=Path(sys.argv[1]); p.write_bytes(_encode_collection_lock_record(_new_collection_lock_record())); "
+        "print('ready',flush=True); "
         "sys.stdin.readline(); p.unlink()"
     )
     process: subprocess.Popen[str] = subprocess.Popen(

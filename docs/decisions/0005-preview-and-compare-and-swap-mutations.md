@@ -71,3 +71,4 @@ Supported intents remain registration, Markdown creation, tags/aliases changes, 
 - `src/knowledge_system/mutation.py`
 - `src/knowledge_system/domain.py`
 - ADR 0004 for principal ownership and authorization
+- ADR 0007 for portable path grammar and lock-removal identity binding

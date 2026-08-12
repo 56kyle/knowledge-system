@@ -1,0 +1,59 @@
+{
+  "$defs": {
+    "SemanticRelease": {
+      "additionalProperties": false,
+      "description": "Accepted digest for one authoritative semantic release.",
+      "properties": {
+        "identifier": {
+          "title": "Identifier",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "identifier",
+        "version",
+        "sha256"
+      ],
+      "title": "SemanticRelease",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Accepted profile and relation-vocabulary releases.",
+  "properties": {
+    "profiles": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SemanticRelease"
+      },
+      "title": "Profiles",
+      "type": "array"
+    },
+    "relation_vocabularies": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SemanticRelease"
+      },
+      "title": "Relation Vocabularies",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "title": "SemanticReleaseRegistry",
+  "type": "object"
+}

@@ -1,0 +1,832 @@
+{
+  "$defs": {
+    "CatalogEntry": {
+      "additionalProperties": false,
+      "description": "Deployment locator for one collection identity.",
+      "properties": {
+        "collection_id": {
+          "title": "Collection Id",
+          "type": "string"
+        },
+        "manifest": {
+          "title": "Manifest",
+          "type": "string"
+        },
+        "repo_root": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repo Root"
+        },
+        "trust_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Trust Domains",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "collection_id",
+        "manifest",
+        "trust_domains"
+      ],
+      "title": "CatalogEntry",
+      "type": "object"
+    },
+    "CollectionCatalog": {
+      "additionalProperties": false,
+      "description": "Owner-maintained collection locator catalog.",
+      "properties": {
+        "collections": {
+          "items": {
+            "$ref": "#/$defs/CatalogEntry"
+          },
+          "title": "Collections",
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "collections"
+      ],
+      "title": "CollectionCatalog",
+      "type": "object"
+    },
+    "ControlManifest": {
+      "additionalProperties": false,
+      "description": "Contained file manifest for one control authority repository.",
+      "properties": {
+        "catalog": {
+          "title": "Catalog",
+          "type": "string"
+        },
+        "control_id": {
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "title": "Control Id",
+          "type": "string"
+        },
+        "grants": {
+          "title": "Grants",
+          "type": "string"
+        },
+        "owner": {
+          "minLength": 1,
+          "title": "Owner",
+          "type": "string"
+        },
+        "projection_recipes": {
+          "title": "Projection Recipes",
+          "type": "string"
+        },
+        "semantic_releases": {
+          "title": "Semantic Releases",
+          "type": "string"
+        },
+        "trust_domains": {
+          "title": "Trust Domains",
+          "type": "string"
+        },
+        "trust_policy": {
+          "title": "Trust Policy",
+          "type": "string"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "control_id",
+        "owner",
+        "catalog",
+        "trust_domains",
+        "trust_policy",
+        "grants",
+        "semantic_releases",
+        "projection_recipes"
+      ],
+      "title": "ControlManifest",
+      "type": "object"
+    },
+    "CrossDomainRule": {
+      "additionalProperties": false,
+      "description": "Explicitly allowed relation across trust domains.",
+      "properties": {
+        "destination_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Destination Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "predicates": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Predicates",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "source_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Domains",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "source_domains",
+        "destination_domains",
+        "predicates"
+      ],
+      "title": "CrossDomainRule",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "description": "One deterministic and machine-readable diagnostic.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "details": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "title": "Details",
+          "type": "object"
+        },
+        "line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "message"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "GrantRegistry": {
+      "additionalProperties": false,
+      "description": "Owner and task-scoped authorization grants.",
+      "properties": {
+        "grants": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/OwnerGrant"
+              },
+              {
+                "$ref": "#/$defs/TaskScopedGrant"
+              }
+            ]
+          },
+          "title": "Grants",
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "grants"
+      ],
+      "title": "GrantRegistry",
+      "type": "object"
+    },
+    "OwnerGrant": {
+      "additionalProperties": false,
+      "description": "Permanent authority held only by the control repository owner.",
+      "properties": {
+        "actions": {
+          "items": {
+            "enum": [
+              "administer",
+              "read",
+              "link",
+              "retrieve",
+              "synthesize",
+              "declassify",
+              "update_local_evidence",
+              "register",
+              "create",
+              "set_field",
+              "remove_field",
+              "replace_subtree",
+              "move",
+              "reserve_collection",
+              "retire_identity"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Actions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "collections": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Collections",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "domains": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "expires_at": {
+          "default": null,
+          "title": "Expires At",
+          "type": "null"
+        },
+        "principal": {
+          "title": "Principal",
+          "type": "string"
+        },
+        "task": {
+          "const": "*",
+          "default": "*",
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "principal",
+        "actions",
+        "domains"
+      ],
+      "title": "OwnerGrant",
+      "type": "object"
+    },
+    "ProjectionRecipe": {
+      "additionalProperties": false,
+      "description": "Versioned recipe for a rebuildable derived projection.",
+      "properties": {
+        "admitted_review_statuses": {
+          "items": {
+            "$ref": "#/$defs/ReviewStatus"
+          },
+          "title": "Admitted Review Statuses",
+          "type": "array"
+        },
+        "chunker": {
+          "title": "Chunker",
+          "type": "string"
+        },
+        "collections": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Collections",
+          "type": "array"
+        },
+        "graph_predicates": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Graph Predicates",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "trust_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Trust Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "collections",
+        "admitted_review_statuses",
+        "trust_domains",
+        "chunker"
+      ],
+      "title": "ProjectionRecipe",
+      "type": "object"
+    },
+    "ProjectionRecipeRegistry": {
+      "additionalProperties": false,
+      "description": "Owner-selected rebuildable projection recipes.",
+      "properties": {
+        "recipes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProjectionRecipe"
+          },
+          "title": "Recipes",
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "title": "ProjectionRecipeRegistry",
+      "type": "object"
+    },
+    "ReviewStatus": {
+      "description": "Trust status scoped to the current note revision.",
+      "enum": [
+        "unreviewed",
+        "reviewed",
+        "review_required"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    },
+    "SemanticRelease": {
+      "additionalProperties": false,
+      "description": "Accepted digest for one authoritative semantic release.",
+      "properties": {
+        "identifier": {
+          "title": "Identifier",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "identifier",
+        "version",
+        "sha256"
+      ],
+      "title": "SemanticRelease",
+      "type": "object"
+    },
+    "SemanticReleaseRegistry": {
+      "additionalProperties": false,
+      "description": "Accepted profile and relation-vocabulary releases.",
+      "properties": {
+        "profiles": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SemanticRelease"
+          },
+          "title": "Profiles",
+          "type": "array"
+        },
+        "relation_vocabularies": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SemanticRelease"
+          },
+          "title": "Relation Vocabularies",
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "title": "SemanticReleaseRegistry",
+      "type": "object"
+    },
+    "Severity": {
+      "description": "Validation finding severity.",
+      "enum": [
+        "advisory",
+        "warning",
+        "error",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "TaskScopedGrant": {
+      "additionalProperties": false,
+      "description": "Time-bounded authority for one explicit task and collection set.",
+      "properties": {
+        "actions": {
+          "items": {
+            "enum": [
+              "administer",
+              "read",
+              "link",
+              "retrieve",
+              "synthesize",
+              "declassify",
+              "update_local_evidence",
+              "register",
+              "create",
+              "set_field",
+              "remove_field",
+              "replace_subtree",
+              "move",
+              "reserve_collection",
+              "retire_identity"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Actions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "collections": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Collections",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "domains": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "principal": {
+          "title": "Principal",
+          "type": "string"
+        },
+        "task": {
+          "minLength": 1,
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "principal",
+        "task",
+        "actions",
+        "domains",
+        "collections",
+        "expires_at"
+      ],
+      "title": "TaskScopedGrant",
+      "type": "object"
+    },
+    "TrustDomainDefinition": {
+      "additionalProperties": false,
+      "description": "One owner-defined trust domain.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "TrustDomainDefinition",
+      "type": "object"
+    },
+    "TrustDomainRegistry": {
+      "additionalProperties": false,
+      "description": "Owner-maintained trust domains and exact-domain enclaves.",
+      "properties": {
+        "domains": {
+          "items": {
+            "$ref": "#/$defs/TrustDomainDefinition"
+          },
+          "title": "Domains",
+          "type": "array"
+        },
+        "enclaves": {
+          "items": {
+            "$ref": "#/$defs/TrustEnclaveDefinition"
+          },
+          "title": "Enclaves",
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "domains",
+        "enclaves"
+      ],
+      "title": "TrustDomainRegistry",
+      "type": "object"
+    },
+    "TrustEnclaveDefinition": {
+      "additionalProperties": false,
+      "description": "One exact trust-domain set and its optional deployment handles.",
+      "properties": {
+        "credential_handle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Credential Handle"
+        },
+        "domains": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "index_handle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Index Handle"
+        }
+      },
+      "required": [
+        "id",
+        "domains"
+      ],
+      "title": "TrustEnclaveDefinition",
+      "type": "object"
+    },
+    "TrustPolicy": {
+      "additionalProperties": false,
+      "description": "Owner-controlled trust-domain relation policy.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "rules": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CrossDomainRule"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "TrustPolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Read-only control bundle snapshot and diagnostics.",
+  "properties": {
+    "bundle_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Bundle Sha256"
+    },
+    "catalog": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CollectionCatalog"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "control_root": {
+      "title": "Control Root",
+      "type": "string"
+    },
+    "exported_schema_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Exported Schema Sha256",
+      "type": "string"
+    },
+    "findings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "grants": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GrantRegistry"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "knowledge_system_revision": {
+      "title": "Knowledge System Revision",
+      "type": "string"
+    },
+    "knowledge_system_version": {
+      "title": "Knowledge System Version",
+      "type": "string"
+    },
+    "manifest": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ControlManifest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "projection_recipes": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProjectionRecipeRegistry"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "semantic_releases": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SemanticReleaseRegistry"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "trust_domains": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TrustDomainRegistry"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "trust_policy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TrustPolicy"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "control_root",
+    "knowledge_system_version",
+    "knowledge_system_revision",
+    "exported_schema_sha256"
+  ],
+  "title": "ControlInspectionReport",
+  "type": "object"
+}

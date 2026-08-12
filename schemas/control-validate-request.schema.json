@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Inputs for read-only control authority validation.",
+  "properties": {
+    "root": {
+      "title": "Root",
+      "type": "string"
+    }
+  },
+  "required": [
+    "root"
+  ],
+  "title": "ControlValidateRequest",
+  "type": "object"
+}

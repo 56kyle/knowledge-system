@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "DeclarativeField": {
+      "additionalProperties": false,
+      "description": "Custom-profile field contract.",
+      "properties": {
+        "enum": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Enum",
+          "type": "array"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "type": {
+          "enum": [
+            "string",
+            "integer",
+            "boolean",
+            "string-list"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "title": "DeclarativeField",
+      "type": "object"
+    },
+    "DeclarativeInvariant": {
+      "additionalProperties": false,
+      "description": "Supported non-executable custom-profile invariant.",
+      "properties": {
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Fields",
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "required_together",
+            "exactly_one",
+            "requires"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fields"
+      ],
+      "title": "DeclarativeInvariant",
+      "type": "object"
+    },
+    "PredicateDefinition": {
+      "additionalProperties": false,
+      "description": "Locked canonical relation predicate behavior.",
+      "properties": {
+        "default_resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RelationResolution"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "prospective_allowed": {
+          "default": false,
+          "title": "Prospective Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "PredicateDefinition",
+      "type": "object"
+    },
+    "RelationResolution": {
+      "description": "Whether a relation target must already resolve.",
+      "enum": [
+        "required",
+        "prospective"
+      ],
+      "title": "RelationResolution",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Versioned declarative extension profile.",
+  "properties": {
+    "field_prefix": {
+      "pattern": "^[a-z][a-z0-9_]*_$",
+      "title": "Field Prefix",
+      "type": "string"
+    },
+    "fields": {
+      "items": {
+        "$ref": "#/$defs/DeclarativeField"
+      },
+      "title": "Fields",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "invariants": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DeclarativeInvariant"
+      },
+      "title": "Invariants",
+      "type": "array"
+    },
+    "predicates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PredicateDefinition"
+      },
+      "title": "Predicates",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "field_prefix",
+    "fields"
+  ],
+  "title": "ProfileDefinition",
+  "type": "object"
+}

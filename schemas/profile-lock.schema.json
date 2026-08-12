@@ -1,0 +1,71 @@
+{
+  "$defs": {
+    "ProfileLock": {
+      "additionalProperties": false,
+      "description": "Integrity binding for a profile or vocabulary.",
+      "properties": {
+        "identifier": {
+          "title": "Identifier",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "identifier",
+        "version",
+        "sha256"
+      ],
+      "title": "ProfileLock",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Collection profile lock file.",
+  "properties": {
+    "profiles": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProfileLock"
+      },
+      "title": "Profiles",
+      "type": "array"
+    },
+    "relation_vocabularies": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProfileLock"
+      },
+      "title": "Relation Vocabularies",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "title": "ProfileLockFile",
+  "type": "object"
+}

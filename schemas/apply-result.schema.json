@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "description": "Successful mutation application result.",
+  "properties": {
+    "operation_id": {
+      "title": "Operation Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "written_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Written Paths",
+      "type": "array"
+    }
+  },
+  "required": [
+    "operation_id",
+    "written_paths"
+  ],
+  "title": "ApplyResult",
+  "type": "object"
+}

@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "TrustDomainDefinition": {
+      "additionalProperties": false,
+      "description": "One owner-defined trust domain.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "TrustDomainDefinition",
+      "type": "object"
+    },
+    "TrustEnclaveDefinition": {
+      "additionalProperties": false,
+      "description": "One exact trust-domain set and its optional deployment handles.",
+      "properties": {
+        "credential_handle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Credential Handle"
+        },
+        "domains": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "id": {
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "index_handle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Index Handle"
+        }
+      },
+      "required": [
+        "id",
+        "domains"
+      ],
+      "title": "TrustEnclaveDefinition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Owner-maintained trust domains and exact-domain enclaves.",
+  "properties": {
+    "domains": {
+      "items": {
+        "$ref": "#/$defs/TrustDomainDefinition"
+      },
+      "title": "Domains",
+      "type": "array"
+    },
+    "enclaves": {
+      "items": {
+        "$ref": "#/$defs/TrustEnclaveDefinition"
+      },
+      "title": "Enclaves",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "domains",
+    "enclaves"
+  ],
+  "title": "TrustDomainRegistry",
+  "type": "object"
+}

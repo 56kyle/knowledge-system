@@ -1,0 +1,313 @@
+{
+  "$defs": {
+    "FilePrecondition": {
+      "additionalProperties": false,
+      "description": "Expected state of one mutation target.",
+      "properties": {
+        "exists": {
+          "title": "Exists",
+          "type": "boolean"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        }
+      },
+      "required": [
+        "path",
+        "exists"
+      ],
+      "title": "FilePrecondition",
+      "type": "object"
+    },
+    "IdentityReservation": {
+      "additionalProperties": false,
+      "description": "Expected identity availability bound to one namespace and collection.",
+      "properties": {
+        "collection_id": {
+          "title": "Collection Id",
+          "type": "string"
+        },
+        "expected_available": {
+          "default": true,
+          "title": "Expected Available",
+          "type": "boolean"
+        },
+        "identifier": {
+          "title": "Identifier",
+          "type": "string"
+        },
+        "namespace": {
+          "enum": [
+            "note",
+            "collection"
+          ],
+          "title": "Namespace",
+          "type": "string"
+        }
+      },
+      "required": [
+        "namespace",
+        "collection_id",
+        "identifier"
+      ],
+      "title": "IdentityReservation",
+      "type": "object"
+    },
+    "MutationIntent": {
+      "description": "Supported local mutation operations.",
+      "enum": [
+        "register",
+        "create",
+        "set_field",
+        "remove_field",
+        "replace_subtree",
+        "move",
+        "reserve_collection",
+        "retire_identity"
+      ],
+      "title": "MutationIntent",
+      "type": "string"
+    },
+    "PlannedFile": {
+      "additionalProperties": false,
+      "description": "Complete proposed bytes for one file and its readable diff.",
+      "properties": {
+        "after_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "After Sha256"
+        },
+        "before_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Before Sha256"
+        },
+        "content_base64": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Content Base64"
+        },
+        "delete": {
+          "default": false,
+          "title": "Delete",
+          "type": "boolean"
+        },
+        "diff": {
+          "title": "Diff",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "after_sha256",
+        "content_base64",
+        "diff"
+      ],
+      "title": "PlannedFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable preview and compare-and-swap mutation contract.",
+  "properties": {
+    "actor": {
+      "title": "Actor",
+      "type": "string"
+    },
+    "catalog_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Catalog Sha256"
+    },
+    "collection": {
+      "title": "Collection",
+      "type": "string"
+    },
+    "collection_id": {
+      "title": "Collection Id",
+      "type": "string"
+    },
+    "collection_snapshot_sha256": {
+      "title": "Collection Snapshot Sha256",
+      "type": "string"
+    },
+    "configuration_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Configuration Sha256"
+    },
+    "expected_git_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Git Revision"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/PlannedFile"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "grant_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Grant Sha256"
+    },
+    "intent": {
+      "$ref": "#/$defs/MutationIntent"
+    },
+    "intent_payload_json": {
+      "title": "Intent Payload Json",
+      "type": "string"
+    },
+    "operation_id": {
+      "title": "Operation Id",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "policy_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Policy Sha256"
+    },
+    "preconditions": {
+      "items": {
+        "$ref": "#/$defs/FilePrecondition"
+      },
+      "title": "Preconditions",
+      "type": "array"
+    },
+    "profile_lock_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Profile Lock Sha256"
+    },
+    "reservations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/IdentityReservation"
+      },
+      "title": "Reservations",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "semantic_unit": {
+      "title": "Semantic Unit",
+      "type": "string"
+    },
+    "task": {
+      "title": "Task",
+      "type": "string"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "operation_id",
+    "plan_sha256",
+    "intent",
+    "actor",
+    "task",
+    "collection",
+    "collection_id",
+    "collection_snapshot_sha256",
+    "intent_payload_json",
+    "semantic_unit",
+    "preconditions",
+    "files"
+  ],
+  "title": "MutationPlan",
+  "type": "object"
+}

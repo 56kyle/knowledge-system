@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "IngestionRecord": {
+      "additionalProperties": false,
+      "description": "Trace from a derived record to canonical Markdown.",
+      "properties": {
+        "attestation": {
+          "$ref": "#/$defs/RevisionAttestation"
+        },
+        "canonical_reference": {
+          "title": "Canonical Reference",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "deleted": {
+          "default": false,
+          "title": "Deleted",
+          "type": "boolean"
+        },
+        "ingested_at": {
+          "format": "date-time",
+          "title": "Ingested At",
+          "type": "string"
+        },
+        "projection": {
+          "title": "Projection",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "trust_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Trust Domains",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "projection",
+        "canonical_reference",
+        "revision",
+        "content_sha256",
+        "trust_domains",
+        "ingested_at",
+        "attestation"
+      ],
+      "title": "IngestionRecord",
+      "type": "object"
+    },
+    "ReviewStatus": {
+      "description": "Trust status scoped to the current note revision.",
+      "enum": [
+        "unreviewed",
+        "reviewed",
+        "review_required"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    },
+    "RevisionAttestation": {
+      "additionalProperties": false,
+      "description": "Projection proof binding a canonical revision to reviewed content.",
+      "properties": {
+        "attested_at": {
+          "format": "date-time",
+          "title": "Attested At",
+          "type": "string"
+        },
+        "canonical_revision": {
+          "title": "Canonical Revision",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "review_basis": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Review Basis"
+        },
+        "review_status": {
+          "$ref": "#/$defs/ReviewStatus"
+        }
+      },
+      "required": [
+        "canonical_revision",
+        "content_sha256",
+        "review_status",
+        "attested_at"
+      ],
+      "title": "RevisionAttestation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Rebuildable retrieval chunk with exact canonical provenance.",
+  "properties": {
+    "block": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Block"
+    },
+    "heading": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Heading"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "ingestion": {
+      "$ref": "#/$defs/IngestionRecord"
+    },
+    "ordinal": {
+      "minimum": 0,
+      "title": "Ordinal",
+      "type": "integer"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "ingestion",
+    "text",
+    "ordinal"
+  ],
+  "title": "ChunkRecord",
+  "type": "object"
+}

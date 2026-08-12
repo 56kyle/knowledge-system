@@ -1,0 +1,71 @@
+{
+  "$defs": {
+    "ReviewStatus": {
+      "description": "Trust status scoped to the current note revision.",
+      "enum": [
+        "unreviewed",
+        "reviewed",
+        "review_required"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Versioned recipe for a rebuildable derived projection.",
+  "properties": {
+    "admitted_review_statuses": {
+      "items": {
+        "$ref": "#/$defs/ReviewStatus"
+      },
+      "title": "Admitted Review Statuses",
+      "type": "array"
+    },
+    "chunker": {
+      "title": "Chunker",
+      "type": "string"
+    },
+    "collections": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Collections",
+      "type": "array"
+    },
+    "graph_predicates": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Graph Predicates",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "trust_domains": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Trust Domains",
+      "type": "array",
+      "uniqueItems": true
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "collections",
+    "admitted_review_statuses",
+    "trust_domains",
+    "chunker"
+  ],
+  "title": "ProjectionRecipe",
+  "type": "object"
+}

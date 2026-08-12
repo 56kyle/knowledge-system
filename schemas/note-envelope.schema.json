@@ -1,0 +1,520 @@
+{
+  "$defs": {
+    "EpistemicStatus": {
+      "description": "Claim-level epistemic posture.",
+      "enum": [
+        "observation",
+        "hypothesis",
+        "supported",
+        "contested",
+        "refuted",
+        "mixed"
+      ],
+      "title": "EpistemicStatus",
+      "type": "string"
+    },
+    "LiteratureItem": {
+      "additionalProperties": false,
+      "description": "One Literature processing queue item.",
+      "properties": {
+        "checked": {
+          "default": false,
+          "title": "Checked",
+          "type": "boolean"
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "enum": [
+                "atomic",
+                "project",
+                "discarded",
+                "duplicate",
+                "deferred"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outcome"
+        },
+        "review_due": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Review Due"
+        },
+        "review_event": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Review Event"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "LiteratureItem",
+      "type": "object"
+    },
+    "Origin": {
+      "description": "How durable note material entered the collection.",
+      "enum": [
+        "human",
+        "agent",
+        "mixed",
+        "imported"
+      ],
+      "title": "Origin",
+      "type": "string"
+    },
+    "ProjectTask": {
+      "additionalProperties": false,
+      "description": "One actionable Project task.",
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action"
+        },
+        "checked": {
+          "default": false,
+          "title": "Checked",
+          "type": "boolean"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "ProjectTask",
+      "type": "object"
+    },
+    "RecordStatus": {
+      "description": "Durable record lifecycle independent of FLAP.",
+      "enum": [
+        "active",
+        "superseded",
+        "retired"
+      ],
+      "title": "RecordStatus",
+      "type": "string"
+    },
+    "Relation": {
+      "additionalProperties": false,
+      "description": "Typed edge retained in canonical Markdown.",
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/RelationConfidence",
+          "default": "asserted"
+        },
+        "predicate": {
+          "pattern": "^[a-z][a-z0-9_-]*$",
+          "title": "Predicate",
+          "type": "string"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RelationResolution"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "predicate",
+        "target"
+      ],
+      "title": "Relation",
+      "type": "object"
+    },
+    "RelationConfidence": {
+      "description": "Whether an edge is authored or derived.",
+      "enum": [
+        "asserted",
+        "inferred"
+      ],
+      "title": "RelationConfidence",
+      "type": "string"
+    },
+    "RelationResolution": {
+      "description": "Whether a relation target must already resolve.",
+      "enum": [
+        "required",
+        "prospective"
+      ],
+      "title": "RelationResolution",
+      "type": "string"
+    },
+    "ReviewAttestation": {
+      "additionalProperties": false,
+      "description": "Human review attestation for one content digest.",
+      "properties": {
+        "basis": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Basis"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "status": {
+          "$ref": "#/$defs/ReviewStatus"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "ReviewAttestation",
+      "type": "object"
+    },
+    "ReviewStatus": {
+      "description": "Trust status scoped to the current note revision.",
+      "enum": [
+        "unreviewed",
+        "reviewed",
+        "review_required"
+      ],
+      "title": "ReviewStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Progressive metadata envelope for a registered Markdown note.",
+  "properties": {
+    "aliases": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Aliases",
+      "type": "array"
+    },
+    "assets": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Assets",
+      "type": "array"
+    },
+    "captures": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Captures",
+      "type": "array"
+    },
+    "contributors": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Contributors",
+      "type": "array"
+    },
+    "created_by": {
+      "title": "Created By",
+      "type": "string"
+    },
+    "epistemic_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EpistemicStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "flap_type": {
+      "anyOf": [
+        {
+          "enum": [
+            "fleeting",
+            "literature",
+            "atomic",
+            "project"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Flap Type"
+    },
+    "id": {
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "led_to": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Led To",
+      "type": "array"
+    },
+    "literature_items": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/LiteratureItem"
+      },
+      "title": "Literature Items",
+      "type": "array"
+    },
+    "origin": {
+      "$ref": "#/$defs/Origin",
+      "default": "human"
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Outcome"
+    },
+    "processing_state": {
+      "anyOf": [
+        {
+          "enum": [
+            "unfiled",
+            "processed",
+            "deferred"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Processing State"
+    },
+    "profiles": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Profiles",
+      "type": "array"
+    },
+    "project_state": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project State"
+    },
+    "record_status": {
+      "$ref": "#/$defs/RecordStatus",
+      "default": "active"
+    },
+    "relations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Relation"
+      },
+      "title": "Relations",
+      "type": "array"
+    },
+    "research_depth": {
+      "anyOf": [
+        {
+          "enum": [
+            "named",
+            "scanned",
+            "studied",
+            "applied"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Research Depth"
+    },
+    "research_kind": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Research Kind"
+    },
+    "research_role": {
+      "anyOf": [
+        {
+          "enum": [
+            "note",
+            "map",
+            "frontier"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Research Role"
+    },
+    "review": {
+      "$ref": "#/$defs/ReviewAttestation"
+    },
+    "review_due": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Review Due"
+    },
+    "source_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Version"
+    },
+    "sources": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "tags": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "tasks": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProjectTask"
+      },
+      "title": "Tasks",
+      "type": "array"
+    },
+    "up": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Up"
+    }
+  },
+  "required": [
+    "id",
+    "created_by"
+  ],
+  "title": "NoteEnvelope",
+  "type": "object"
+}

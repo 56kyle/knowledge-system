@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "CrossDomainRule": {
+      "additionalProperties": false,
+      "description": "Explicitly allowed relation across trust domains.",
+      "properties": {
+        "destination_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Destination Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "predicates": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Predicates",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "source_domains": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Domains",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "source_domains",
+        "destination_domains",
+        "predicates"
+      ],
+      "title": "CrossDomainRule",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Owner-controlled trust-domain relation policy.",
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "rules": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CrossDomainRule"
+      },
+      "title": "Rules",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id"
+  ],
+  "title": "TrustPolicy",
+  "type": "object"
+}

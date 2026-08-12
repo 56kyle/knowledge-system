@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "description": "Logical external or local source identity.",
+  "properties": {
+    "creators": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Creators",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "uri": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Uri"
+    }
+  },
+  "required": [
+    "id",
+    "title"
+  ],
+  "title": "SourceRecord",
+  "type": "object"
+}

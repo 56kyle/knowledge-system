@@ -96,6 +96,8 @@ max-complexity = 10
     "C408",
     "SLF001"
 ]
+"tests/integration_tests/test_collection_locking.py" = ["S603"]
+"tests/integration_tests/test_cli.py" = ["S603"]
 "exceptions.py" = ["D107"]
 "noxfile.py" = ["S101"]
 "scripts/*" = ["S603", "S607"]

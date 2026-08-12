@@ -110,10 +110,25 @@ def typecheck(session: Session) -> None:
 def security_python(session: Session) -> None:
     """Run code security checks (Bandit) on Python code."""
     session.log(f"Running Bandit static security analysis with py{session.python}.")
-    session.run("uvx", "bandit", "-r", PACKAGE_NAME, "-c", "bandit.yml", "-ll")
+    session.run("uvx", "bandit", "-r", str(REPO_ROOT / "src" / PACKAGE_NAME), "-c", "bandit.yml", "-ll")
 
-    session.log(f"Running pip-audit dependency security check with py{session.python}.")
-    session.run("uvx", "pip-audit")
+    session.log("Exporting locked runtime dependencies for pip-audit.")
+    audit_requirements = Path(session.create_tmp()) / "runtime-requirements.txt"
+    session.run(
+        "uv",
+        "export",
+        "--frozen",
+        "--no-dev",
+        "--no-emit-project",
+        "--format",
+        "requirements-txt",
+        "--output-file",
+        str(audit_requirements),
+        external=True,
+    )
+
+    session.log(f"Auditing locked runtime dependencies with py{session.python}.")
+    session.run("uvx", "pip-audit", "--requirement", str(audit_requirements), "-s", "osv")
 
 
 @nox.session(python=PYTHON_VERSIONS, name="tests-python", tags=[TEST])

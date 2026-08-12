@@ -1,6 +1,6 @@
 [project]
 name = "knowledge-system"
-version = "0.0.0"
+version = "0.0.1"
 description = "knowledge-system"
 authors = [
     { name = "Kyle Oliver", email = "56kyleoliver@gmail.com" },

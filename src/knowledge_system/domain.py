@@ -724,6 +724,107 @@ class TrustGrant(FrozenModel):
         return _aware_utc(value)
 
 
+class TrustDomainDefinition(FrozenModel):
+    """One owner-defined trust domain."""
+
+    id: str = Field(pattern=r"^[a-z0-9]+(?:[.-][a-z0-9]+)*$")
+
+
+class TrustEnclaveDefinition(FrozenModel):
+    """One exact trust-domain set and its optional deployment handles."""
+
+    id: str = Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    domains: frozenset[str] = Field(min_length=1)
+    index_handle: str | None = None
+    credential_handle: str | None = None
+
+
+class TrustDomainRegistry(FrozenModel):
+    """Owner-maintained trust domains and exact-domain enclaves."""
+
+    version: Literal[1] = SCHEMA_VERSION
+    domains: tuple[TrustDomainDefinition, ...]
+    enclaves: tuple[TrustEnclaveDefinition, ...]
+
+
+ControlAction = Literal[
+    "administer",
+    "read",
+    "link",
+    "retrieve",
+    "synthesize",
+    "declassify",
+    "update_local_evidence",
+    "register",
+    "create",
+    "set_field",
+    "remove_field",
+    "replace_subtree",
+    "move",
+    "reserve_collection",
+    "retire_identity",
+]
+
+
+class OwnerGrant(FrozenModel):
+    """Permanent authority held only by the control repository owner."""
+
+    principal: str
+    task: Literal["*"] = "*"
+    actions: frozenset[ControlAction] = Field(min_length=1)
+    domains: frozenset[str] = Field(min_length=1)
+    collections: frozenset[str] = frozenset()
+    expires_at: None = None
+
+
+class TaskScopedGrant(FrozenModel):
+    """Time-bounded authority for one explicit task and collection set."""
+
+    principal: str
+    task: str = Field(min_length=1)
+    actions: frozenset[ControlAction] = Field(min_length=1)
+    domains: frozenset[str] = Field(min_length=1)
+    collections: frozenset[str] = Field(min_length=1)
+    expires_at: datetime
+
+    @field_validator("task")
+    @classmethod
+    def task_is_bounded(cls, value: str) -> str:
+        """Require one non-wildcard canonical task string."""
+        if not value or value != value.strip() or value == "*":
+            raise ValueError("task-scoped grant task must be nonempty, trimmed, and not '*'")
+        return value
+
+    @field_validator("expires_at")
+    @classmethod
+    def expires_at_is_aware_utc(cls, value: datetime) -> datetime:
+        """Normalize an aware grant expiry to UTC."""
+        return _aware_utc(value)
+
+
+class GrantRegistry(FrozenModel):
+    """Owner and task-scoped authorization grants."""
+
+    version: Literal[1] = SCHEMA_VERSION
+    grants: tuple[OwnerGrant | TaskScopedGrant, ...]
+
+
+class SemanticRelease(FrozenModel):
+    """Accepted digest for one authoritative semantic release."""
+
+    identifier: str
+    version: int = Field(ge=1)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class SemanticReleaseRegistry(FrozenModel):
+    """Accepted profile and relation-vocabulary releases."""
+
+    version: Literal[1] = SCHEMA_VERSION
+    profiles: tuple[SemanticRelease, ...] = ()
+    relation_vocabularies: tuple[SemanticRelease, ...] = ()
+
+
 class KnowledgeEdge(FrozenModel):
     """Resolved relation used for trust and impact analysis."""
 
@@ -998,6 +1099,73 @@ class ProjectionRecipe(FrozenModel):
     trust_domains: frozenset[str]
     chunker: str
     graph_predicates: tuple[str, ...] = ()
+
+
+class ProjectionRecipeRegistry(FrozenModel):
+    """Owner-selected rebuildable projection recipes."""
+
+    version: Literal[1] = SCHEMA_VERSION
+    recipes: tuple[ProjectionRecipe, ...] = ()
+
+
+class ControlManifest(FrozenModel):
+    """Contained file manifest for one control authority repository."""
+
+    version: Literal[1] = SCHEMA_VERSION
+    control_id: str = Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    owner: str = Field(min_length=1)
+    catalog: str
+    trust_domains: str
+    trust_policy: str
+    grants: str
+    semantic_releases: str
+    projection_recipes: str
+
+
+class ControlInspectRequest(FrozenModel):
+    """Inputs for read-only control authority inspection."""
+
+    root: str
+
+
+class ControlValidateRequest(ControlInspectRequest):
+    """Inputs for read-only control authority validation."""
+
+
+class ControlInspectionReport(FrozenModel):
+    """Read-only control bundle snapshot and diagnostics."""
+
+    schema_version: Literal[1] = SCHEMA_VERSION
+    control_root: str
+    manifest: ControlManifest | None = None
+    catalog: CollectionCatalog | None = None
+    trust_domains: TrustDomainRegistry | None = None
+    trust_policy: TrustPolicy | None = None
+    grants: GrantRegistry | None = None
+    semantic_releases: SemanticReleaseRegistry | None = None
+    projection_recipes: ProjectionRecipeRegistry | None = None
+    bundle_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    knowledge_system_version: str
+    knowledge_system_revision: str
+    exported_schema_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    findings: tuple[Finding, ...] = ()
+
+
+class ControlValidationReport(FrozenModel):
+    """Control authority validation results and compatibility identity."""
+
+    schema_version: Literal[1] = SCHEMA_VERSION
+    control_root: str
+    bundle_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    knowledge_system_version: str
+    knowledge_system_revision: str
+    exported_schema_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    findings: tuple[Finding, ...] = ()
+
+    @property
+    def has_blocking_findings(self) -> bool:
+        """Return whether error or critical findings prevent acceptance."""
+        return any(f.severity in {Severity.ERROR, Severity.CRITICAL} for f in self.findings)
 
 
 class RevisionAttestation(FrozenModel):

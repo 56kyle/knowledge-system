@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "Inputs for read-only control authority inspection.",
+  "properties": {
+    "root": {
+      "title": "Root",
+      "type": "string"
+    }
+  },
+  "required": [
+    "root"
+  ],
+  "title": "ControlInspectRequest",
+  "type": "object"
+}

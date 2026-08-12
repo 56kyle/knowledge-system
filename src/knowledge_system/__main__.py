@@ -5,23 +5,35 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Mapping
+from datetime import date
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from typing import cast
 
 import typer
+from pydantic import BaseModel
 from pydantic import ValidationError
 from typing_extensions import Annotated
 
 from knowledge_system import inspect_collection
+from knowledge_system import inspect_control
 from knowledge_system import validate_collection
+from knowledge_system import validate_control
 from knowledge_system.authentication import authenticate_local_filesystem
 from knowledge_system.domain import ApplyContext
+from knowledge_system.domain import ControlInspectionReport
+from knowledge_system.domain import ControlInspectRequest
+from knowledge_system.domain import ControlValidateRequest
+from knowledge_system.domain import ControlValidationReport
 from knowledge_system.domain import InspectionReport
 from knowledge_system.domain import InspectRequest
 from knowledge_system.domain import MutationPlan
 from knowledge_system.domain import MutationRequest
 from knowledge_system.domain import Origin
 from knowledge_system.domain import RegistrationRequest
+from knowledge_system.domain import Severity
 from knowledge_system.domain import ValidateRequest
 from knowledge_system.domain import ValidationReport
 from knowledge_system.exceptions import ApplyIndeterminateError
@@ -59,9 +71,11 @@ app = typer.Typer(
 mutation_app = typer.Typer(help="Plan or apply typed collection mutations.")
 review_app = typer.Typer(help="Compute revision-scoped review values.")
 schema_app = typer.Typer(help="Export versioned JSON Schema contracts.")
+control_app = typer.Typer(help="Inspect and validate a human-owned control authority.")
 app.add_typer(mutation_app, name="mutation")
 app.add_typer(review_app, name="review")
 app.add_typer(schema_app, name="schema")
+app.add_typer(control_app, name="control")
 
 
 @app.callback()
@@ -114,6 +128,80 @@ def _emit_model(
         _echo(f"{finding.severity.value}: {finding.code}: {location}: {finding.message}")
     if not model.findings:
         _echo("findings: none")
+
+
+def _emit_control_model(
+    model: ControlInspectionReport | ControlValidationReport,
+    output_format: OutputFormat,
+) -> None:
+    """Render a control result as stable JSON or concise text."""
+    if output_format is OutputFormat.JSON:
+        _echo(json.dumps(_canonical_json_value(model), ensure_ascii=True, indent=2, sort_keys=True))
+        return
+    _echo(f"control: {model.control_root}")
+    _echo(f"bundle_sha256: {model.bundle_sha256 or 'unavailable'}")
+    _echo(f"knowledge_system_version: {model.knowledge_system_version}")
+    _echo(f"knowledge_system_revision: {model.knowledge_system_revision}")
+    _echo(f"exported_schema_sha256: {model.exported_schema_sha256}")
+    for finding in model.findings:
+        _echo(f"{finding.severity.value}: {finding.code}: {finding.path or 'control'}: {finding.message}")
+    if not model.findings:
+        _echo("findings: none")
+
+
+def _canonical_json_value(value: object) -> object:
+    """Convert a model value to JSON primitives with stable unordered collections."""
+    if isinstance(value, BaseModel):
+        dumped = cast("object", value.model_dump(mode="python"))
+        return _canonical_json_value(dumped)
+    if isinstance(value, Mapping):
+        mapping = cast("Mapping[object, object]", value)
+        ordered = sorted(mapping.items(), key=lambda pair: str(pair[0]))
+        return {str(key): _canonical_json_value(item) for key, item in ordered}
+    if isinstance(value, (set, frozenset)):
+        values = cast("set[object] | frozenset[object]", value)
+        normalized = [_canonical_json_value(item) for item in values]
+        return sorted(normalized, key=lambda item: json.dumps(item, sort_keys=True))
+    if isinstance(value, (tuple, list)):
+        values = cast("tuple[object, ...] | list[object]", value)
+        return [_canonical_json_value(item) for item in values]
+    if isinstance(value, Enum):
+        return _canonical_json_value(cast("object", value.value))
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    raise TypeError(f"unsupported JSON boundary value: {type(value).__name__}")
+
+
+@control_app.command("inspect")
+def control_inspect_command(
+    root: Annotated[Path, typer.Argument(exists=True, file_okay=False)] = _CURRENT_DIRECTORY,
+    output_format: Annotated[OutputFormat, typer.Option("--format")] = OutputFormat.TEXT,
+) -> None:
+    """Inspect a control authority without changing it."""
+    try:
+        report = inspect_control(ControlInspectRequest(root=str(root)))
+        _emit_control_model(report, output_format)
+        if any(finding.severity in {Severity.ERROR, Severity.CRITICAL} for finding in report.findings):
+            raise typer.Exit(EXIT_VALIDATION)
+    except (KnowledgeSystemError, OSError, ValidationError) as error:
+        _handle_error(error)
+
+
+@control_app.command("validate")
+def control_validate_command(
+    root: Annotated[Path, typer.Argument(exists=True, file_okay=False)] = _CURRENT_DIRECTORY,
+    output_format: Annotated[OutputFormat, typer.Option("--format")] = OutputFormat.TEXT,
+) -> None:
+    """Validate a complete control authority without changing it."""
+    try:
+        report = validate_control(ControlValidateRequest(root=str(root)))
+        _emit_control_model(report, output_format)
+        if report.has_blocking_findings:
+            raise typer.Exit(EXIT_VALIDATION)
+    except (KnowledgeSystemError, OSError, ValidationError) as error:
+        _handle_error(error)
 
 
 def _handle_error(error: Exception) -> None:

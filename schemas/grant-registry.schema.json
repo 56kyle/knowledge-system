@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "OwnerGrant": {
+      "additionalProperties": false,
+      "description": "Permanent authority held only by the control repository owner.",
+      "properties": {
+        "actions": {
+          "items": {
+            "enum": [
+              "administer",
+              "read",
+              "link",
+              "retrieve",
+              "synthesize",
+              "declassify",
+              "update_local_evidence",
+              "register",
+              "create",
+              "set_field",
+              "remove_field",
+              "replace_subtree",
+              "move",
+              "reserve_collection",
+              "retire_identity"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Actions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "collections": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Collections",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "domains": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "expires_at": {
+          "default": null,
+          "title": "Expires At",
+          "type": "null"
+        },
+        "principal": {
+          "title": "Principal",
+          "type": "string"
+        },
+        "task": {
+          "const": "*",
+          "default": "*",
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "principal",
+        "actions",
+        "domains"
+      ],
+      "title": "OwnerGrant",
+      "type": "object"
+    },
+    "TaskScopedGrant": {
+      "additionalProperties": false,
+      "description": "Time-bounded authority for one explicit task and collection set.",
+      "properties": {
+        "actions": {
+          "items": {
+            "enum": [
+              "administer",
+              "read",
+              "link",
+              "retrieve",
+              "synthesize",
+              "declassify",
+              "update_local_evidence",
+              "register",
+              "create",
+              "set_field",
+              "remove_field",
+              "replace_subtree",
+              "move",
+              "reserve_collection",
+              "retire_identity"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Actions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "collections": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Collections",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "domains": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Domains",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "principal": {
+          "title": "Principal",
+          "type": "string"
+        },
+        "task": {
+          "minLength": 1,
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "principal",
+        "task",
+        "actions",
+        "domains",
+        "collections",
+        "expires_at"
+      ],
+      "title": "TaskScopedGrant",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Owner and task-scoped authorization grants.",
+  "properties": {
+    "grants": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/OwnerGrant"
+          },
+          {
+            "$ref": "#/$defs/TaskScopedGrant"
+          }
+        ]
+      },
+      "title": "Grants",
+      "type": "array"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "grants"
+  ],
+  "title": "GrantRegistry",
+  "type": "object"
+}

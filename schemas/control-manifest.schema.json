@@ -1,0 +1,58 @@
+{
+  "additionalProperties": false,
+  "description": "Contained file manifest for one control authority repository.",
+  "properties": {
+    "catalog": {
+      "title": "Catalog",
+      "type": "string"
+    },
+    "control_id": {
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Control Id",
+      "type": "string"
+    },
+    "grants": {
+      "title": "Grants",
+      "type": "string"
+    },
+    "owner": {
+      "minLength": 1,
+      "title": "Owner",
+      "type": "string"
+    },
+    "projection_recipes": {
+      "title": "Projection Recipes",
+      "type": "string"
+    },
+    "semantic_releases": {
+      "title": "Semantic Releases",
+      "type": "string"
+    },
+    "trust_domains": {
+      "title": "Trust Domains",
+      "type": "string"
+    },
+    "trust_policy": {
+      "title": "Trust Policy",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "control_id",
+    "owner",
+    "catalog",
+    "trust_domains",
+    "trust_policy",
+    "grants",
+    "semantic_releases",
+    "projection_recipes"
+  ],
+  "title": "ControlManifest",
+  "type": "object"
+}

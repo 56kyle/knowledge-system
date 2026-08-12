@@ -7,8 +7,15 @@ from knowledge_system.authentication import LocalFilesystemPrincipal
 from knowledge_system.authentication import authenticate_local_filesystem
 from knowledge_system.authentication import issue_authenticated_principal
 from knowledge_system.collection import inspect_root
+from knowledge_system.control import inspect_control_root
+from knowledge_system.control import validate_control_root
+from knowledge_system.digest import digest_named_content
 from knowledge_system.domain import ApplyContext
 from knowledge_system.domain import ApplyResult
+from knowledge_system.domain import ControlInspectionReport
+from knowledge_system.domain import ControlInspectRequest
+from knowledge_system.domain import ControlValidateRequest
+from knowledge_system.domain import ControlValidationReport
 from knowledge_system.domain import DomainAnalysis
 from knowledge_system.domain import InspectionReport
 from knowledge_system.domain import InspectRequest
@@ -38,6 +45,10 @@ __all__ = [
     "ApplyContext",
     "ApplyResult",
     "AuthenticatedPrincipal",
+    "ControlInspectRequest",
+    "ControlInspectionReport",
+    "ControlValidateRequest",
+    "ControlValidationReport",
     "DomainAnalysis",
     "InspectRequest",
     "InspectionReport",
@@ -57,13 +68,16 @@ __all__ = [
     "authenticate_local_filesystem",
     "compute_effective_domains",
     "compute_review_basis",
+    "digest_named_content",
     "inspect_collection",
+    "inspect_control",
     "issue_authenticated_principal",
     "parse_reference",
     "plan_mutation",
     "plan_registration",
     "resolve_reference",
     "validate_collection",
+    "validate_control",
 ]
 
 
@@ -78,3 +92,13 @@ def validate_collection(request: ValidateRequest) -> ValidationReport:
     manifest = Path(request.manifest) if request.manifest else None
     report = validate_root(Path(request.collection), manifest_path=manifest)
     return validate_external_context(request, report)
+
+
+def inspect_control(request: ControlInspectRequest) -> ControlInspectionReport:
+    """Inspect a control authority through the stable public request boundary."""
+    return inspect_control_root(Path(request.root))
+
+
+def validate_control(request: ControlValidateRequest) -> ControlValidationReport:
+    """Validate a control authority through the stable public request boundary."""
+    return validate_control_root(Path(request.root))

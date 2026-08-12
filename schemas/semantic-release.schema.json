@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "description": "Accepted digest for one authoritative semantic release.",
+  "properties": {
+    "identifier": {
+      "title": "Identifier",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "identifier",
+    "version",
+    "sha256"
+  ],
+  "title": "SemanticRelease",
+  "type": "object"
+}

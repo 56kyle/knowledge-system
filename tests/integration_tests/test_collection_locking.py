@@ -2,6 +2,7 @@
 
 import json
 import os
+import platform
 import subprocess
 import sys
 import time
@@ -71,6 +72,34 @@ def _write_lock(root: Path, *, pid: int, created: float, nonce: str = "nonce") -
     return path
 
 
+def apply_with_windows_os_kill_audit_guard(root: Path) -> None:
+    plan = _plan(root)
+    lock = _lock_path(root)
+    lock.write_text(
+        json.dumps(
+            {
+                "pid": os.getpid(),
+                "host": platform.node().strip().casefold(),
+                "created": 0,
+                "nonce": "audit-guard",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def reject_os_kill(event: str, _arguments: tuple[object, ...]) -> None:
+        if event == "os.kill":
+            raise RuntimeError("non-POSIX lock recovery attempted to probe a PID")
+
+    sys.addaudithook(reject_os_kill)
+    try:
+        apply_mutation(plan, _context(plan))
+    except MutationConflictError:
+        if not (root / "new.md").exists() and lock.exists():
+            return
+    raise RuntimeError("unapproved Windows lock recovery did not fail closed")
+
+
 def test_collection_lock_releases_after_context(tmp_path: Path) -> None:
     plan = _plan(tmp_path)
     lock = _lock_path(tmp_path)
@@ -111,9 +140,43 @@ def test_stale_dead_local_lock_on_windows_requires_approved_recovery(tmp_path: P
     assert (tmp_path / "new.md").exists()
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific PID-probe regression")
+def test_apply_mutation_does_not_probe_pid_during_unapproved_windows_lock_recovery(
+    tmp_path: Path,
+) -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "from pathlib import Path; "
+                "from tests.integration_tests.test_collection_locking import "
+                "apply_with_windows_os_kill_audit_guard; "
+                "apply_with_windows_os_kill_audit_guard(Path(__import__('sys').argv[1]))"
+            ),
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
 @pytest.mark.parametrize(
     ("pid", "created"),
-    [(999_999_999, time.time()), (os.getpid(), 0)],
+    [
+        (999_999_999, time.time()),
+        pytest.param(
+            os.getpid(),
+            0,
+            marks=pytest.mark.skipif(
+                sys.platform == "win32",
+                reason="os.kill(pid, 0) can interrupt the current Windows console process",
+            ),
+        ),
+    ],
 )
 def test_fresh_dead_or_stale_live_lock_does_not_recover(tmp_path: Path, pid: int, created: float) -> None:
     plan = _plan(tmp_path)

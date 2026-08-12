@@ -1007,8 +1007,7 @@ def _recover_collection_lock(lock_path: Path, plan: MutationPlan, context: Apply
         created = record.get("created")
         pid = record.get("pid")
         old = isinstance(created, (int, float)) and time.time() - created >= _LOCK_STALE_SECONDS
-        dead = isinstance(pid, int) and not _process_exists(pid)
-        recoverable = os.name == "posix" and same_host and old and dead
+        recoverable = os.name == "posix" and same_host and old and isinstance(pid, int) and not _process_exists(pid)
     except (OSError, ValueError, TypeError):
         recoverable = False
     approval = context.approval
